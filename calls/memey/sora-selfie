@@ -1,19 +1,15 @@
 const Command = require('../../structures/Command');
-const { createCanvas, loadImage, registerFont } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
+const request = require('node-superfetch');
 const path = require('path');
-const { wrapText } = require('../../util/Canvas');
-registerFont(path.join(__dirname, '..', '..', 'assets', 'fonts', 'Noto-Regular.ttf'), { family: 'Noto' });
-registerFont(path.join(__dirname, '..', '..', 'assets', 'fonts', 'Noto-CJK.otf'), { family: 'Noto' });
-registerFont(path.join(__dirname, '..', '..', 'assets', 'fonts', 'Noto-Emoji.ttf'), { family: 'Noto' });
 
-module.exports = class SonicSaysCommand extends Command {
+module.exports = class SoraSelfieCommand extends Command {
 	constructor(client) {
 		super(client, {
-			name: 'sonic-says',
-			aliases: ['sonic-say', 'sonic'],
+			name: 'sora-selfie',
 			group: 'edit-meme',
-			memberName: 'sonic-says',
-			description: 'Sends a "Sonic Says" meme with the quote of your choice.',
+			memberName: 'sora-selfie',
+			description: 'Draws an image or a user\'s avatar behind Sora taking a selfie.',
 			throttling: {
 				usages: 1,
 				duration: 10
@@ -21,50 +17,46 @@ module.exports = class SonicSaysCommand extends Command {
 			clientPermissions: ['ATTACH_FILES'],
 			credit: [
 				{
-					name: 'Google',
-					url: 'https://www.google.com/',
-					reason: 'Noto Font',
-					reasonURL: 'https://www.google.com/get/noto/'
+					name: 'Square Enix',
+					url: 'https://square-enix-games.com/',
+					reason: 'Original "Kingdom Hearts" Game',
+					reasonURL: 'https://www.kingdomhearts.com/home/us/'
 				},
 				{
-					name: 'SEGA',
-					url: 'https://www.sega.com/',
-					reason: 'Image, Original "Sonic the Hedgehog" Game',
-					reasonURL: 'https://www.sonicthehedgehog.com/'
-				},
-				{
-					name: 'Overtime2005',
-					url: 'https://github.com/Overtime2005',
-					reason: 'Concept'
+					name: '@Candasaurus',
+					url: 'https://twitter.com/Candasaurus',
+					reason: 'Image',
+					reasonURL: 'https://twitter.com/Candasaurus/status/1041946636656599045'
 				}
 			],
 			args: [
 				{
-					key: 'text',
-					prompt: 'What should Sonic say?',
-					type: 'string',
-					max: 500
+					key: 'image',
+					prompt: 'What image would you like to edit?',
+					type: 'image',
+					default: msg => msg.author.displayAvatarURL({ format: 'png', size: 512 })
 				}
 			]
 		});
 	}
 
-	async run(msg, { text }) {
-		const base = await loadImage(path.join(__dirname, '..', '..', 'assets', 'images', 'sonic-says.png'));
-		const canvas = createCanvas(base.width, base.height);
-		const ctx = canvas.getContext('2d');
-		ctx.textBaseline = 'top';
-		ctx.drawImage(base, 0, 0);
-		ctx.font = '24px Noto';
-		let fontSize = 24;
-		while (ctx.measureText(text).width > 648) {
-			fontSize--;
-			ctx.font = `${fontSize}px Noto`;
+	async run(msg, { image }) {
+		try {
+			const base = await loadImage(path.join(__dirname, '..', '..', 'assets', 'images', 'sora-selfie.png'));
+			const { body } = await request.get(image);
+			const data = await loadImage(body);
+			const canvas = createCanvas(base.width, base.height);
+			const ctx = canvas.getContext('2d');
+			ctx.fillStyle = 'black';
+			ctx.fillRect(0, 0, base.width, base.height);
+			const ratio = data.width / data.height;
+			const width = Math.round(base.height * ratio);
+			ctx.drawImage(data, (base.width / 2) - (width / 2), 0, width, base.height);
+			ctx.drawImage(base, 0, 0);
+			return msg.say({ files: [{ attachment: canvas.toBuffer(), name: 'sora-selfie.png' }] });
+		} catch (err) {
+			return msg.reply(`Oh no, an error occurred: \`${err.message}\`. Try again later!`);
 		}
-		const lines = await wrapText(ctx, text, 185);
-		ctx.fillStyle = 'white';
-		ctx.fillText(lines.join('\n'), 92, 67, 185);
-		return msg.say({ files: [{ attachment: canvas.toBuffer(), name: 'sonic-says.png' }] });
 	}
 };
-///Nishant#8662
+//Nishant#8662
