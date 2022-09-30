@@ -2,10 +2,7 @@
 const colors = require("colors");
 const enmap = require("enmap"); 
 const fs = require("fs"); 
-const emojis = require("./botconfig/emojis.json");
-const config = require("./botconfig/config.json");
-const advertisement = require("./botconfig/advertisement.json");
-const { delay } = require("./handlers/functions");
+
 const Meme = require("memer-api");
 require('dotenv').config();
 
@@ -24,27 +21,8 @@ presence: {
   }
 });
 
-client.memer = new Meme(process.env.memer_api || config.memer_api); 
-client.la = { }
-var langs = fs.readdirSync("./languages")
-for(const lang of langs.filter(file => file.endsWith(".json"))){
-  client.la[`${lang.split(".json").join("")}`] = require(`./languages/${lang}`)
-}
-Object.freeze(client.la)
-client.setMaxListeners(0);
-require('events').defaultMaxListeners = 0;
+client.memer = new Meme(process.env.memer_api); 
 
-
-
-
-client.ad = {
-  enabled: advertisement.adenabled,
-  statusad: advertisement.statusad,
-  spacedot: advertisement.spacedot,
-  textad: advertisement.textad
-}
-
-const { formatNumber } = require('./util/Util');
 
 client.registry
 	.registerDefaultTypes()
@@ -75,27 +53,7 @@ client.registry
 		['roleplay', 'Roleplay']
 	])
 
-function requirehandlers(){
-  ["extraevents", "loaddb", "clientvariables", "command", "events", "erelahandler", "slashCommands"].forEach(handler => {
-    try{ require(`./handlers/${handler}`)(client); }catch (e){ console.log(e.stack ? String(e.stack).grey : String(e).grey) }
-  });
-  ["twitterfeed", /*"twitterfeed2",*/ "livelog", "youtube", "tiktok"].forEach(handler=>{
-    try{ require(`./social_log/${handler}`)(client); }catch (e){ console.log(e.stack ? String(e.stack).grey : String(e).grey) }
-  });
-  [ "logger", "anti_nuke", "antidiscord", "antilinks","anticaps", "antispam", "blacklist", "keyword", "antimention", "autobackup",
-    
-    "apply", "ticket", "ticketevent",
-    "roster", "joinvc", "epicgamesverification", "boostlog",
-    
-    "welcome", "leave", "ghost_ping_detector", "antiselfbot",
 
-    "jointocreate", "reactionrole", "ranking", "timedmessages",
-    
-    "membercount", "autoembed", "suggest", "validcode", "dailyfact", "autonsfw",
-    "aichat", "mute", "automeme", "counter"].forEach(handler => {
-    try{ require(`./handlers/${handler}`)(client); }catch (e){ console.log(e.stack ? String(e.stack).grey : String(e).grey) }
-  });
-}requirehandlers();
 	const joinLeaveChannel = await client.fetchJoinLeaveChannel();
 	if (joinLeaveChannel) {
 		const embed = new MessageEmbed()
@@ -153,3 +111,5 @@ client.on('commandRun', command => {
 });
 
 client.on('commandError', (command, err) => client.logger.error(`[COMMAND:${command.name}]\n${err.stack}`));
+
+client.login(process.env.token)
